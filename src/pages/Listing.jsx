@@ -3,6 +3,13 @@ import { doc, getDoc } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { db } from "../firebase.config";
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, Scrollbar, A11y } from "swiper";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import "swiper/css/scrollbar";
 import shareIcon from "../assets/svg/shareIcon.svg";
 import Spinner from "../components/Spinner";
 
@@ -35,6 +42,24 @@ function Listing() {
 	if (loading) return <Spinner />;
 	return (
 		<main>
+			<Swiper
+				modules={[Navigation, Pagination, Scrollbar, A11y]}
+				slidesPerView={1}
+				pagination={{ clickable: true }}
+			>
+				{listing.imageUrls.map((url, index) => (
+					<SwiperSlide key={index}>
+						<div
+							style={{
+								background: `url(${listing.imageUrls[index]}) center no-repeat`,
+								backgroundSize: "cover",
+							}}
+							className="swiperSlideDiv"
+						></div>
+					</SwiperSlide>
+				))}
+			</Swiper>
+
 			<div
 				className="shareIconDiv"
 				onClick={() => {
@@ -87,7 +112,30 @@ function Listing() {
 				</ul>
 				<p className="listingLocationTitle">Location</p>
 
-				<div className="leafletContainer"></div>
+				<div className="leafletContainer">
+					<MapContainer
+						style={{ height: "100%", width: "100%" }}
+						center={[
+							listing.geolocation.lat,
+							listing.geolocation.lng,
+						]}
+						zoom={13}
+						scrollWheelZoom={false}
+					>
+						<TileLayer
+							attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+							url="https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png"
+						/>
+						<Marker
+							position={[
+								listing.geolocation.lat,
+								listing.geolocation.lng,
+							]}
+						>
+							<Popup>{listing.location}</Popup>
+						</Marker>
+					</MapContainer>
+				</div>
 
 				{auth.currentUser?.uid !== listing.userRef && (
 					<Link

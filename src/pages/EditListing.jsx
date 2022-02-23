@@ -76,7 +76,7 @@ function EditListing() {
 			}
 		};
 		fetchListing();
-	}, [params.listingId, navigate]);
+	}, [params.listingId, auth, formData, navigate]);
 
 	// Sets userRef to logged in user
 	useEffect(() => {
@@ -93,7 +93,7 @@ function EditListing() {
 		return () => {
 			isMounted.current = false;
 		};
-	}, [isMounted]);
+	}, [isMounted, auth, formData, navigate]);
 
 	const onSubmit = async (e) => {
 		e.preventDefault();
@@ -163,6 +163,8 @@ function EditListing() {
 								break;
 							case "running":
 								console.log("Upload is running");
+								break;
+							default:
 								break;
 						}
 					},

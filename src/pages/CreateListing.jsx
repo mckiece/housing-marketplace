@@ -61,7 +61,7 @@ function CreateListing() {
 		return () => {
 			isMounted.current = false;
 		};
-	}, [isMounted]);
+	}, [isMounted, auth, formData, navigate]);
 
 	const onSubmit = async (e) => {
 		e.preventDefault();
@@ -131,6 +131,8 @@ function CreateListing() {
 								break;
 							case "running":
 								console.log("Upload is running");
+								break;
+							default:
 								break;
 						}
 					},

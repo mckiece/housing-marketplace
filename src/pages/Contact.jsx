@@ -7,7 +7,7 @@ import { db } from "../firebase.config";
 function Contact() {
 	const [message, setMessage] = useState("");
 	const [landlord, setLandlord] = useState(null);
-	const [searchParams, setSearchParams] = useSearchParams();
+	const [searchParams] = useSearchParams();
 
 	const params = useParams();
 
@@ -25,7 +25,7 @@ function Contact() {
 		};
 
 		getLandlord();
-	}, [params.landlordId]);
+	}, [params]);
 
 	const onChange = (e) => setMessage(e.target.value);
 

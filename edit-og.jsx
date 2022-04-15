@@ -1,12 +1,12 @@
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import {
 	getDownloadURL,
 	getStorage,
 	ref,
 	uploadBytesResumable,
 } from "firebase/storage";
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
@@ -14,6 +14,8 @@ import Spinner from "../components/Spinner";
 import { db } from "../firebase.config";
 
 function EditListing() {
+	// eslint-disable-next-line
+	const [geolocationEnabled, setGeolocationEnabled] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const [listing, setListing] = useState(false);
 	const [formData, setFormData] = useState({
@@ -28,6 +30,8 @@ function EditListing() {
 		regularPrice: 0,
 		discountedPrice: 0,
 		images: {},
+		latitude: 0,
+		longitude: 0,
 	});
 
 	const {
@@ -42,6 +46,8 @@ function EditListing() {
 		regularPrice,
 		discountedPrice,
 		images,
+		latitude,
+		longitude,
 	} = formData;
 
 	const auth = getAuth();
@@ -102,11 +108,9 @@ function EditListing() {
 
 		setLoading(true);
 
-		if (offer && discountedPrice >= regularPrice) {
+		if (discountedPrice >= regularPrice) {
 			setLoading(false);
-			toast.error(
-				"Discounted Price needs to be less than regular price."
-			);
+			toast.error("Discounted price needs to be less than regular price");
 			return;
 		}
 
@@ -116,31 +120,35 @@ function EditListing() {
 			return;
 		}
 
-		let geolocation = {},
-			location;
+		let geolocation = {};
+		let location;
 
-		const response = await fetch(
-			`https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.REACT_APP_GEOCODE_API_KEY}`
-		);
-		console.log(response);
+		if (geolocationEnabled) {
+			const response = await fetch(
+				`https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.REACT_APP_GEOCODE_API_KEY}`
+			);
 
-		const data = await response.json();
+			const data = await response.json();
 
-		geolocation.lat = data.results[0]?.geometry.location.lat ?? 0;
-		geolocation.lng = data.results[0]?.geometry.location.lng ?? 0;
+			geolocation.lat = data.results[0]?.geometry.location.lat ?? 0;
+			geolocation.lng = data.results[0]?.geometry.location.lng ?? 0;
 
-		location =
-			data.status === "ZERO_RESULTS"
-				? undefined
-				: data.results[0]?.formatted_address;
+			location =
+				data.status === "ZERO_RESULTS"
+					? undefined
+					: data.results[0]?.formatted_address;
 
-		if (location === undefined || location.includes("undefined")) {
-			setLoading(false);
-			toast.error("Please enter a valid address.");
-			return;
+			if (location === undefined || location.includes("undefined")) {
+				setLoading(false);
+				toast.error("Please enter a correct address");
+				return;
+			}
+		} else {
+			geolocation.lat = latitude;
+			geolocation.lng = longitude;
 		}
 
-		// Store images in firebase
+		// Store image in firebase
 		const storeImage = async (image) => {
 			return new Promise((resolve, reject) => {
 				const storage = getStorage();
@@ -174,6 +182,8 @@ function EditListing() {
 						reject(error);
 					},
 					() => {
+						// Handle successful uploads on complete
+						// For instance, get the download URL: https://firebasestorage.googleapis.com/...
 						getDownloadURL(uploadTask.snapshot.ref).then(
 							(downloadURL) => {
 								resolve(downloadURL);
@@ -184,7 +194,7 @@ function EditListing() {
 			});
 		};
 
-		const imageUrls = await Promise.all(
+		const imgUrls = await Promise.all(
 			[...images].map((image) => storeImage(image))
 		).catch(() => {
 			setLoading(false);
@@ -194,16 +204,17 @@ function EditListing() {
 
 		const formDataCopy = {
 			...formData,
-			imageUrls,
+			imgUrls,
 			geolocation,
 			timestamp: serverTimestamp(),
 		};
 
+		formDataCopy.location = address;
 		delete formDataCopy.images;
 		delete formDataCopy.address;
-		location && (formDataCopy.location = location);
 		!formDataCopy.offer && delete formDataCopy.discountedPrice;
 
+		// Update listing
 		const docRef = doc(db, "listings", params.listingId);
 		await updateDoc(docRef, formDataCopy);
 		setLoading(false);
@@ -238,7 +249,9 @@ function EditListing() {
 		}
 	};
 
-	if (loading) return <Spinner />;
+	if (loading) {
+		return <Spinner />;
+	}
 
 	return (
 		<div className="profile">
@@ -386,6 +399,33 @@ function EditListing() {
 						onChange={onMutate}
 						required
 					/>
+
+					{!geolocationEnabled && (
+						<div className="formLatLng flex">
+							<div>
+								<label className="formLabel">Latitude</label>
+								<input
+									className="formInputSmall"
+									type="number"
+									id="latitude"
+									value={latitude}
+									onChange={onMutate}
+									required
+								/>
+							</div>
+							<div>
+								<label className="formLabel">Longitude</label>
+								<input
+									className="formInputSmall"
+									type="number"
+									id="longitude"
+									value={longitude}
+									onChange={onMutate}
+									required
+								/>
+							</div>
+						</div>
+					)}
 
 					<label className="formLabel">Offer</label>
 					<div className="formButtons">

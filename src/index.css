@@ -78,6 +78,7 @@ button {
 	top: -3%;
 	right: -2%;
 }
+
 .editIcon {
 	cursor: pointer;
 	position: absolute;
@@ -93,6 +94,7 @@ button {
 .explore {
 	margin: 1rem;
 }
+
 @media (min-width: 1024px) {
 	.pageContainer,
 	.offers,
@@ -101,6 +103,12 @@ button {
 	.category,
 	.explore {
 		margin: 3rem;
+	}
+}
+
+@media (max-width: 420px) {
+	.pageContainer {
+		min-height: 100vh;
 	}
 }
 
@@ -374,7 +382,9 @@ button {
 .exploreCategories {
 	display: flex;
 	justify-content: space-between;
+	margin-bottom: 5rem;
 }
+
 .exploreCategories a {
 	width: 48%;
 }

@@ -61,7 +61,8 @@ function CreateListing() {
 		return () => {
 			isMounted.current = false;
 		};
-	}, [isMounted, auth, formData, navigate]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isMounted]);
 
 	const onSubmit = async (e) => {
 		e.preventDefault();
@@ -88,9 +89,10 @@ function CreateListing() {
 		const response = await fetch(
 			`https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.REACT_APP_GEOCODE_API_KEY}`
 		);
-		console.log(response);
 
 		const data = await response.json();
+
+		console.log(data);
 
 		geolocation.lat = data.results[0]?.geometry.location.lat ?? 0;
 		geolocation.lng = data.results[0]?.geometry.location.lng ?? 0;
@@ -126,7 +128,7 @@ function CreateListing() {
 							100;
 						console.log("Upload is " + progress + "% done");
 						switch (snapshot.state) {
-							case "pause":
+							case "paused":
 								console.log("Upload is paused");
 								break;
 							case "running":
@@ -140,6 +142,7 @@ function CreateListing() {
 						reject(error);
 					},
 					() => {
+						// Handle successful uploads on complete
 						getDownloadURL(uploadTask.snapshot.ref).then(
 							(downloadURL) => {
 								resolve(downloadURL);
